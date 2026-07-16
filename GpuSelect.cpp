@@ -1,22 +1,6 @@
-#ifndef UNICODE
-#define UNICODE
-#endif
-#ifndef _UNICODE
-#define _UNICODE
-#endif
-
-#include <windows.h>
-#include <shlobj.h>
-#include <shobjidl.h>
-
-#include <filesystem>
-#include <string>
-#include <iostream>
-
+#include "Steam.h"
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "shell32.lib")
-
-namespace fs = std::filesystem;
 
 std::wstring GetExePath()
 {
@@ -83,6 +67,12 @@ void WriteStringValue(
 	}
 }
 
+const std::wstring classes[] =
+{
+	L"exefile\\shell\\",
+	L"lnkfile\\shell\\",
+	L"InternetShortcut\\shell\\"
+};
 
 void CreateMenuEntry(
 	const std::wstring& keyName,
@@ -96,53 +86,36 @@ void CreateMenuEntry(
 		L"\" \"%1\" " +
 		std::to_wstring(gpuMode);
 
-	WriteStringValue(
-		HKEY_CURRENT_USER,
-		L"Software\\Classes\\exefile\\shell\\" +
-		keyName,
-		L"",
-		text
-	);
+	for (const auto& cls : classes)
+	{
+		WriteStringValue(
+			HKEY_CURRENT_USER,
+			(L"Software\\Classes\\" + cls +
+				keyName).c_str(),
+			L"",
+			text
+		);
 
-	WriteStringValue(
-		HKEY_CURRENT_USER,
-		L"Software\\Classes\\exefile\\shell\\" +
-		keyName + L"\\command",
-		L"",
-		command
-	);
-
-
-	WriteStringValue(
-		HKEY_CURRENT_USER,
-		L"Software\\Classes\\lnkfile\\shell\\" +
-		keyName,
-		L"",
-		text
-	);
-
-	WriteStringValue(
-		HKEY_CURRENT_USER,
-		L"Software\\Classes\\lnkfile\\shell\\" +
-		keyName + L"\\command",
-		L"",
-		command
-	);
+		WriteStringValue(
+			HKEY_CURRENT_USER,
+			(L"Software\\Classes\\" + cls +
+				keyName + L"\\command").c_str(),
+			L"",
+			command
+		);
+	}
 }
 
 void DeleteMenuEntry(const std::wstring& keyName)
 {
-	RegDeleteTreeW(
-		HKEY_CURRENT_USER,
-		(L"Software\\Classes\\exefile\\shell\\" + keyName).c_str()
-	);
-
-	RegDeleteTreeW(
-		HKEY_CURRENT_USER,
-		(L"Software\\Classes\\lnkfile\\shell\\" + keyName).c_str()
-	);
+	for (const auto& cls : classes)
+	{
+		RegDeleteTreeW(
+			HKEY_CURRENT_USER,
+			(L"Software\\Classes\\" + cls + keyName).c_str()
+		);
+	}
 }
-
 
 void Install()
 {
@@ -204,7 +177,7 @@ std::wstring ResolveShortcut(
 	IShellLinkW* link = nullptr;
 	IPersistFile* file = nullptr;
 
-	std::wstring result = path;
+	std::wstring result = L"";
 
 
 	if (FAILED(CoCreateInstance(
@@ -259,7 +232,21 @@ void SetGpuPreference(
 	{
 		app = ResolveShortcut(app);
 	}
+	if (app.size() >= 4 &&
+		_wcsicmp(
+			app.substr(app.size() - 4).c_str(),
+			L".url") == 0)
+	{
+		app = ResolveSteamShortcut(app);
+	}
 
+	MessageBoxW(
+		nullptr,
+		(L"Resolved as:" + app).c_str(),
+		L"GpuSelect",
+		MB_OK
+	);
+	if (app.empty() || !fs::exists(app)) { return; }
 
 	HKEY key;
 
