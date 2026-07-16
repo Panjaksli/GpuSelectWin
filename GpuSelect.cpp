@@ -128,12 +128,7 @@ void Install()
 		DeleteMenuEntry(L"GpuPowerSaving");
 		DeleteMenuEntry(L"GpuHighPerformance");
 
-		MessageBoxW(
-			nullptr,
-			L"GPU context menu uninstalled.",
-			L"GpuSelect",
-			MB_OK
-		);
+		LOG(L"GPU context menu uninstalled.");
 		return;
 	}
 
@@ -163,12 +158,7 @@ void Install()
 		2
 	);
 
-	MessageBoxW(
-		nullptr,
-		L"GPU context menu installed.",
-		L"GpuSelect",
-		MB_OK
-	);
+	LOG(L"GPU context menu installed.");
 }
 
 std::wstring ResolveShortcut(
@@ -240,12 +230,7 @@ void SetGpuPreference(
 		app = ResolveSteamShortcut(app);
 	}
 
-	MessageBoxW(
-		nullptr,
-		(L"Resolved as:" + app).c_str(),
-		L"GpuSelect",
-		MB_OK
-	);
+	LOG((L"Resolved as: " + app).c_str());
 	if (app.empty() || !fs::exists(app)) { return; }
 
 	HKEY key;
