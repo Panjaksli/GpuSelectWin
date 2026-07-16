@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="GpuSelect.vcxproj" Id="5380bcc5-ff28-43ff-8bb5-9060548b6d7b" />
+</Solution>
