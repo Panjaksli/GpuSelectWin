@@ -130,14 +130,34 @@ void CreateMenuEntry(
 	);
 }
 
+void DeleteMenuEntry(const std::wstring& keyName)
+{
+	RegDeleteTreeW(
+		HKEY_CURRENT_USER,
+		(L"Software\\Classes\\exefile\\shell\\" + keyName).c_str()
+	);
+
+	RegDeleteTreeW(
+		HKEY_CURRENT_USER,
+		(L"Software\\Classes\\lnkfile\\shell\\" + keyName).c_str()
+	);
+}
+
 
 void Install()
 {
 	fs::path destination(GetInstallPath());
+
 	if (fs::exists(destination)) {
+		DeleteFileW(destination.c_str());
+
+		DeleteMenuEntry(L"GpuAuto");
+		DeleteMenuEntry(L"GpuPowerSaving");
+		DeleteMenuEntry(L"GpuHighPerformance");
+
 		MessageBoxW(
 			nullptr,
-			L"File already exists! Uninstalling...",
+			L"GPU context menu uninstalled.",
 			L"GpuSelect",
 			MB_OK
 		);
@@ -154,25 +174,21 @@ void Install()
 		FALSE
 	);
 
-
 	CreateMenuEntry(
 		L"GpuAuto",
 		L"GPU: Auto",
 		0
 	);
-
 	CreateMenuEntry(
 		L"GpuPowerSaving",
 		L"GPU: Power Saving",
 		1
 	);
-
 	CreateMenuEntry(
 		L"GpuHighPerformance",
 		L"GPU: High Performance",
 		2
 	);
-
 
 	MessageBoxW(
 		nullptr,
