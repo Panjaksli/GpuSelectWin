@@ -8,8 +8,8 @@
 2) Doesn't run anything in background.
 3) Is super light and non intrusive
 ### Usage:
-Right click an exe/shortcut and select the desired GPU mode.  
-<img width="374" height="147" alt="image" src="https://github.com/user-attachments/assets/a1a55e3a-b859-4dfb-ae5e-5cb14ff376d9" />
+Right click an exe/shortcut and select the desired GPU mode from the "Select GPU" menu.  
+<img width="550" height="207" alt="image" src="https://github.com/user-attachments/assets/999e3e5b-18e1-41e9-a666-f431ded3b975" />
 ### Install:
 Run the included exe file, it will install itself and add all necessary context menu entries.
 ### Uninstall:
