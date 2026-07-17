@@ -1,6 +1,23 @@
+#include <utility>
 #include "Steam.h"
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "shell32.lib")
+
+const std::wstring context_path = L"Software\\Classes\\";
+const std::wstring ctx_classes[] =
+{
+	L"exefile\\shell\\",
+	L"lnkfile\\shell\\",
+	L"InternetShortcut\\shell\\"
+};
+using MapMode = std::pair<std::wstring, std::wstring>;
+const MapMode gpu_modes[] =
+{
+	{L"GpuAuto", L"Auto"},
+	{L"GpuPowerSaving", L"Integrated"},
+	{L"GpuHighPerformance", L"Dedicated"}
+};
+constexpr size_t n_modes = sizeof(gpu_modes) / sizeof(MapMode);
 
 std::wstring GetExePath()
 {
@@ -67,13 +84,6 @@ void WriteStringValue(
 	}
 }
 
-const std::wstring classes[] =
-{
-	L"exefile\\shell\\",
-	L"lnkfile\\shell\\",
-	L"InternetShortcut\\shell\\"
-};
-
 void CreateMenuEntry(
 	const std::wstring& keyName,
 	const std::wstring& text,
@@ -86,11 +96,11 @@ void CreateMenuEntry(
 		L"\" \"%1\" " +
 		std::to_wstring(gpuMode);
 
-	for (const auto& cls : classes)
+	for (const auto& cls : ctx_classes)
 	{
 		WriteStringValue(
 			HKEY_CURRENT_USER,
-			(L"Software\\Classes\\" + cls +
+			(context_path + cls +
 				keyName).c_str(),
 			L"",
 			text
@@ -98,7 +108,7 @@ void CreateMenuEntry(
 
 		WriteStringValue(
 			HKEY_CURRENT_USER,
-			(L"Software\\Classes\\" + cls +
+			(context_path + cls +
 				keyName + L"\\command").c_str(),
 			L"",
 			command
@@ -106,13 +116,56 @@ void CreateMenuEntry(
 	}
 }
 
+void CreateGpuSubmenu()
+{
+	std::wstring exe = GetInstallPath();
+
+	auto cmd = [&](int mode)
+		{
+			return L"\"" + exe + L"\" \"%1\" " + std::to_wstring(mode);
+		};
+
+	for (const auto& cls : ctx_classes)
+	{
+		std::wstring base =
+			context_path + cls + L"GpuMode";
+
+		WriteStringValue(
+			HKEY_CURRENT_USER,
+			base,
+			L"MUIVerb",
+			L"Select GPU");
+
+		WriteStringValue(
+			HKEY_CURRENT_USER,
+			base,
+			L"SubCommands",
+			L"");
+		for (size_t id = 0; id < n_modes; id++)
+		{
+			WriteStringValue(
+				HKEY_CURRENT_USER,
+				base + L"\\shell\\" + gpu_modes[id].first,
+				L"",
+				gpu_modes[id].second);
+
+			WriteStringValue(
+				HKEY_CURRENT_USER,
+				base + L"\\shell\\" + gpu_modes[id].first + L"\\command",
+				L"",
+				cmd(id));
+		}
+
+	}
+}
+
 void DeleteMenuEntry(const std::wstring& keyName)
 {
-	for (const auto& cls : classes)
+	for (const auto& cls : ctx_classes)
 	{
 		RegDeleteTreeW(
 			HKEY_CURRENT_USER,
-			(L"Software\\Classes\\" + cls + keyName).c_str()
+			(context_path + cls + keyName).c_str()
 		);
 	}
 }
@@ -123,11 +176,10 @@ void Install()
 
 	if (fs::exists(destination)) {
 		DeleteFileW(destination.c_str());
-
-		DeleteMenuEntry(L"GpuAuto");
-		DeleteMenuEntry(L"GpuPowerSaving");
-		DeleteMenuEntry(L"GpuHighPerformance");
-
+		DeleteMenuEntry(L"GpuMode");
+		for (size_t id = 0; id < n_modes; id++) {
+			DeleteMenuEntry(gpu_modes[id].first);
+		}
 		LOG(L"GPU context menu uninstalled.");
 		return;
 	}
@@ -141,22 +193,16 @@ void Install()
 		destination.c_str(),
 		FALSE
 	);
-
-	CreateMenuEntry(
-		L"GpuAuto",
-		L"GPU: Auto",
-		0
-	);
-	CreateMenuEntry(
-		L"GpuPowerSaving",
-		L"GPU: Power Saving",
-		1
-	);
-	CreateMenuEntry(
-		L"GpuHighPerformance",
-		L"GPU: High Performance",
-		2
-	);
+	CreateGpuSubmenu();
+	/*
+	for (size_t id = 0; id < n_modes; id++) {
+		CreateMenuEntry(
+			gpu_modes[id].first,
+			gpu_modes[id].second,
+			id
+		);
+	}
+	*/
 
 	LOG(L"GPU context menu installed.");
 }
@@ -222,16 +268,19 @@ void SetGpuPreference(
 	{
 		app = ResolveShortcut(app);
 	}
-	if (app.size() >= 4 &&
+	else if (app.size() >= 4 &&
 		_wcsicmp(
 			app.substr(app.size() - 4).c_str(),
 			L".url") == 0)
 	{
 		app = ResolveSteamShortcut(app);
 	}
+	if (app.empty() || !fs::exists(app)) {
+		LOG((L"Couldn't locate the app!"));
+		return;
+	}
 
-	LOG((L"Resolved as: " + app).c_str());
-	if (app.empty() || !fs::exists(app)) { return; }
+	LOG((L"Set GPU of: " + fs::path(app).filename().wstring() + L"\nAs: " + gpu_modes[mode].second).c_str());
 
 	HKEY key;
 

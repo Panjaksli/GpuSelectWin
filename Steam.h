@@ -29,7 +29,7 @@ namespace fs = std::filesystem;
 
 
 // Specifically searches for the first word on line in json format
-static bool MatchFirstWord(std::wstring_view line, std::wstring_view word) {
+inline bool MatchFirstWord(std::wstring_view line, std::wstring_view word) {
 	size_t lsize = line.size();
 	size_t msize = word.size();
 	size_t i = 0, j = 0;
@@ -42,7 +42,7 @@ static bool MatchFirstWord(std::wstring_view line, std::wstring_view word) {
 	return line[i + j] == L'"';
 }
 
-static std::wstring_view ReturnSecondWord(std::wstring_view line) {
+inline std::wstring_view ReturnSecondWord(std::wstring_view line) {
 	size_t lsize = line.size();
 	size_t i = 0, quotes = 0;
 	while (i < lsize && quotes < 3)
@@ -51,7 +51,7 @@ static std::wstring_view ReturnSecondWord(std::wstring_view line) {
 	return line.substr(i, lsize - i - 1);
 }
 
-static std::wstring GetSteamInstallPath()
+inline std::wstring GetSteamInstallPath()
 {
 	HKEY key;
 	if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Valve\\Steam", 0, KEY_READ, &key) != ERROR_SUCCESS)
@@ -67,7 +67,7 @@ static std::wstring GetSteamInstallPath()
 	return std::wstring(buffer);
 }
 
-static std::wstring ExtractAppId(const std::wstring& steamUrl)
+inline std::wstring ExtractAppId(const std::wstring& steamUrl)
 {
 	size_t i = 0;
 	size_t size = steamUrl.size();
@@ -77,7 +77,7 @@ static std::wstring ExtractAppId(const std::wstring& steamUrl)
 	return res;
 }
 
-static std::wstring ExtractUrlFromShortcutFile(const std::wstring& path)
+inline std::wstring ExtractUrlFromShortcutFile(const std::wstring& path)
 {
 	std::wifstream in(path);
 	if (!in) return path;
@@ -91,7 +91,7 @@ static std::wstring ExtractUrlFromShortcutFile(const std::wstring& path)
 	return path;
 }
 
-static std::wstring FindLibraryPathForApp(
+inline std::wstring FindLibraryPathForApp(
 	const std::wstring& vdfPath,
 	const std::wstring& appId)
 {
@@ -123,7 +123,7 @@ static std::wstring FindLibraryPathForApp(
 }
 
 // Grep appmanifest_<id>.acf for the "installdir" value.
-static std::wstring FindInstallDir(const std::wstring& manifestPath)
+inline std::wstring FindInstallDir(const std::wstring& manifestPath)
 {
 	std::wifstream in(manifestPath);
 	if (!in) return L"";
@@ -137,7 +137,7 @@ static std::wstring FindInstallDir(const std::wstring& manifestPath)
 
 }
 
-static std::wstring UnescapeBackslashes(const std::wstring& in)
+inline std::wstring UnescapeBackslashes(const std::wstring& in)
 {
 	std::wstring out;
 	out.reserve(in.size());
@@ -156,7 +156,7 @@ static std::wstring UnescapeBackslashes(const std::wstring& in)
 	return out;
 }
 
-static bool IsLikelyJunkExe(const std::wstring& filename)
+inline bool IsLikelyJunkExe(const std::wstring& filename)
 {
 	static const std::vector<std::wstring> junkNames = {
 		L"unins", L"vcredist", L"dxsetup", L"dotnetfx",
@@ -176,7 +176,7 @@ static bool IsLikelyJunkExe(const std::wstring& filename)
 	return false;
 }
 
-static std::wstring FindExecutableTopLevel(const std::wstring& installFolder, const std::wstring& installDirName)
+inline std::wstring FindExecutableTopLevel(const std::wstring& installFolder, const std::wstring& installDirName)
 {
 	if (!fs::exists(installFolder)) return L"";
 
@@ -211,7 +211,7 @@ static std::wstring FindExecutableTopLevel(const std::wstring& installFolder, co
 	return !bestMatch.empty() ? bestMatch : largestExe;
 }
 
-std::wstring ResolveSteamShortcut(const std::wstring& path)
+inline std::wstring ResolveSteamShortcut(const std::wstring& path)
 {
 	std::wstring result = L"";
 
